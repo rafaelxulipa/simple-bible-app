@@ -105,7 +105,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowUserInfo(!showUserInfo)}
-                className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 transition-all duration-300"
+                className="bg-white/20 backdrop-blur-sm border-white/30 text-blue-800 hover:bg-white/30 transition-all duration-300"
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -114,7 +114,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
 
           {/* User Info Card (collapsible) */}
           {showUserInfo && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 text-white animate-in slide-in-from-top-2 duration-300">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 text-blue-800 animate-in slide-in-from-top-2 duration-300">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
@@ -132,7 +132,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                       variant="outline"
                       size="sm"
                       onClick={onReset}
-                      className="text-red-400 hover:text-red-300 bg-red-500/20 border-red-400/30 hover:bg-red-500/30"
+                      className="text-red-600 hover:text-white bg-red-500/20 border-red-600 hover:bg-red-500/30"
                     >
                       Redefinir
                     </Button>
@@ -154,12 +154,12 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="flex items-center gap-2 text-white">
+                <div className="flex items-center gap-2 text-blue-800 font-medium">
                   <Book className="w-5 h-5 text-yellow-300" />
                   <span className="text-sm font-medium">Versão da Bíblia:</span>
                 </div>
                 <Select value={selectedVersion} onValueChange={handleVersionChange} disabled={isLoading}>
-                  <SelectTrigger className="w-full sm:w-64 bg-white/20 border-white/30 text-white">
+                  <SelectTrigger className="w-full sm:w-64 bg-white/20 border-white/30 text-blue-800 font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white/95 backdrop-blur-md">
@@ -224,7 +224,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
           </Card>
 
           {/* Footer */}
-          <div className="text-center text-white/90 space-y-2 pb-8">
+          <div className="text-center text-blue-800/90 space-y-2 pb-8">
             <p className="text-base sm:text-lg font-medium drop-shadow-md">Que a palavra de Deus ilumine seu dia! ✨</p>
             <p className="text-sm drop-shadow-md">Igreja: {userData.church}</p>
           </div>
