@@ -9,45 +9,37 @@ interface UserData {
   church: string
 }
 
-export default function Home() {
+export default function HomePage() {
   const [userData, setUserData] = useState<UserData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
+  // Carrega informações do usuário ao montar
   useEffect(() => {
-    // Verificar se já existe dados do usuário no localStorage
-    const storedData = localStorage.getItem("bibleAppUserData")
-    if (storedData) {
-      setUserData(JSON.parse(storedData))
+    try {
+      const data = localStorage.getItem("simpleBible:user")
+      if (data) {
+        setUserData(JSON.parse(data) as UserData)
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setMounted(true)
     }
-    setIsLoading(false)
   }, [])
 
-  const handleUserDataSubmit = (data: UserData) => {
-    // Salvar no localStorage
-    localStorage.setItem("bibleAppUserData", JSON.stringify(data))
+  // Salva ou redefine as informações
+  const handleSubmit = (data: UserData) => {
+    localStorage.setItem("simpleBible:user", JSON.stringify(data))
     setUserData(data)
   }
 
   const handleReset = () => {
-    localStorage.removeItem("bibleAppUserData")
+    localStorage.removeItem("simpleBible:user")
     setUserData(null)
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
+  // Evita piscar conteúdo até o hydration
+  if (!mounted) return null
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {!userData ? (
-        <WelcomeForm onSubmit={handleUserDataSubmit} />
-      ) : (
-        <VerseDisplay userData={userData} onReset={handleReset} />
-      )}
-    </div>
-  )
+  return userData ? <VerseDisplay userData={userData} onReset={handleReset} /> : <WelcomeForm onSubmit={handleSubmit} />
 }

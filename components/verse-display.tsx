@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RefreshCw, Settings, BookOpen, User, Church } from "lucide-react"
-import { bibleVerses } from "@/data/bible-verses"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RefreshCw, Settings, BookOpen, User, Church, Book } from "lucide-react"
+import { getRandomVerse, getAvailableVersions, type BibleVerse } from "@/data/bible-verses"
 
 interface UserData {
   name: string
@@ -16,28 +17,54 @@ interface VerseDisplayProps {
   onReset: () => void
 }
 
-interface Verse {
-  text: string
-  reference: string
-  book: string
-}
-
 export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
-  const [currentVerse, setCurrentVerse] = useState<Verse | null>(null)
+  const [currentVerse, setCurrentVerse] = useState<BibleVerse | null>(null)
+  const [selectedVersion, setSelectedVersion] = useState("NVI")
   const [showUserInfo, setShowUserInfo] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const availableVersions = getAvailableVersions()
 
-  const getRandomVerse = () => {
-    const randomIndex = Math.floor(Math.random() * bibleVerses.length)
-    return bibleVerses[randomIndex]
+  const handleNewVerse = async () => {
+    setIsLoading(true)
+    try {
+      const verse = getRandomVerse(selectedVersion)
+      setCurrentVerse(verse)
+    } catch (error) {
+      console.error("Erro ao carregar versículo:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleNewVerse = () => {
-    setCurrentVerse(getRandomVerse())
+  const handleVersionChange = async (version: string) => {
+    setSelectedVersion(version)
+    setIsLoading(true)
+    try {
+      // Carregar um novo versículo da versão selecionada
+      const verse = getRandomVerse(version)
+      setCurrentVerse(verse)
+    } catch (error) {
+      console.error("Erro ao trocar versão:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
     // Carregar um versículo inicial
-    setCurrentVerse(getRandomVerse())
+    const loadInitialVerse = async () => {
+      setIsLoading(true)
+      try {
+        const verse = getRandomVerse(selectedVersion)
+        setCurrentVerse(verse)
+      } catch (error) {
+        console.error("Erro ao carregar versículo inicial:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialVerse()
   }, [])
 
   const getCurrentTime = () => {
@@ -47,6 +74,10 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
       month: "long",
       day: "numeric",
     })
+  }
+
+  const formatReference = (verse: BibleVerse) => {
+    return `${verse.book} ${verse.chapter}:${verse.verse}`
   }
 
   return (
@@ -93,6 +124,30 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
           </Card>
         )}
 
+        {/* Version Selector */}
+        <Card className="border-green-200 dark:border-green-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Book className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Versão da Bíblia:</span>
+              </div>
+              <Select value={selectedVersion} onValueChange={handleVersionChange} disabled={isLoading}>
+                <SelectTrigger className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableVersions.map((version) => (
+                    <SelectItem key={version.abbreviation} value={version.abbreviation}>
+                      {version.name} ({version.abbreviation})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Verse Card */}
         <Card className="shadow-xl border-0 bg-white dark:bg-gray-800">
           <CardHeader className="text-center pb-4">
@@ -102,22 +157,41 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {currentVerse && (
+            {isLoading ? (
+              <div className="text-center space-y-4">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto mb-4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mx-auto"></div>
+                </div>
+                <p className="text-gray-500 dark:text-gray-400">Carregando versículo...</p>
+              </div>
+            ) : currentVerse ? (
               <div className="text-center space-y-4">
                 <blockquote className="text-lg md:text-xl font-medium text-gray-700 dark:text-gray-300 leading-relaxed italic">
                   "{currentVerse.text}"
                 </blockquote>
                 <div className="space-y-1">
-                  <p className="text-blue-600 dark:text-blue-400 font-semibold">{currentVerse.reference}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Livro de {currentVerse.book}</p>
+                  <p className="text-blue-600 dark:text-blue-400 font-semibold">{formatReference(currentVerse)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Versão: {availableVersions.find((v) => v.abbreviation === selectedVersion)?.name}
+                  </p>
                 </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                <p>Não foi possível carregar o versículo. Tente novamente.</p>
               </div>
             )}
 
             <div className="flex justify-center pt-4">
-              <Button onClick={handleNewVerse} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Novo Versículo
+              <Button
+                onClick={handleNewVerse}
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                {isLoading ? "Carregando..." : "Novo Versículo"}
               </Button>
             </div>
           </CardContent>
