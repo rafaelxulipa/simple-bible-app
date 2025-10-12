@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw, Settings, BookOpen, User, Church, Book, X } from "lucide-react"
 import { getRandomVerse, getAvailableVersions, type BibleVerse } from "@/data/bible-verses"
+import GoogleButton from "@/components/google-button"
 
 interface UserData {
   name: string
@@ -231,19 +232,10 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
         </div>
       </div>
 
-      {/* Google Play Button */}
-      <a
-        href="https://play.google.com/store/apps/details?id=com.rafaelxulipa.simplebibleappmobile"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-[4rem] left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <img
-          src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-          alt="Disponível no Google Play"
-          className="h-12"
-        />
-      </a>
-    </div>
+        {/* Google Play Button */}
+        <GoogleButton />
+    
+      </div>
+    
   )
 }
