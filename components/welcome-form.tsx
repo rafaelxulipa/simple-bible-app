@@ -30,7 +30,7 @@ export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-4 gap-8">
       {/* Sky Background with Clouds */}
       <div className="fixed inset-0 bg-gradient-to-b from-blue-400 via-blue-300 to-blue-100">
         {/* Animated clouds */}
