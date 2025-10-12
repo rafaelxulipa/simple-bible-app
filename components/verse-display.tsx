@@ -6,9 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw, Settings, BookOpen, User, Church, Book, X } from "lucide-react"
 import { getRandomVerse, getAvailableVersions, type BibleVerse } from "@/data/bible-verses"
-import GoogleButton from "./google-button";
-
-
+import GoogleButton from "@/components/google-button"
 
 interface UserData {
   name: string
@@ -234,13 +232,10 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
         </div>
       </div>
 
-      {/* Google Play Button */}
-
-      <GoogleButton />
-
-
-
-
-    </div>
+        {/* Google Play Button */}
+        <GoogleButton />
+    
+      </div>
+    
   )
 }
