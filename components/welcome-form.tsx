@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Heart, Church } from "lucide-react"
+import GoogleButton from "@/components/google-button"
 
 interface UserData {
   name: string
@@ -96,18 +97,14 @@ export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
 
 
       {/* Google Play Button */}
-      <a
-        href="https://play.google.com/store/apps/details?id=com.rafaelxulipa.simplebibleappmobile"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-[4rem] left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <img
-          src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-          alt="Disponível no Google Play"
-          className="h-12"
-        />
-      </a>
+      <GoogleButton />
+      
+
+
+
+
+  
+    
     </div>
   )
 }
