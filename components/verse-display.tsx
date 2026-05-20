@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,8 +15,9 @@ import { Badge } from "@/components/ui/badge"
 import {
   RefreshCw, Settings, BookOpen, User, Church, Book, X,
   Heart, Share2, Moon, Sun, Search, ChevronLeft, ChevronRight,
-  Shuffle, Calendar, Map,
+  Shuffle, Calendar, Map, BookMarked,
 } from "lucide-react"
+import Link from "next/link"
 import {
   getRandomVerse,
   getDailyVerse,
@@ -26,7 +28,7 @@ import {
   type BibleVerse,
   type BibleBook,
 } from "@/data/bible-verses"
-import GoogleButton from "@/components/google-button"
+import { AppFooter } from "@/components/google-button"
 
 interface UserData {
   name: string
@@ -59,9 +61,18 @@ function saveFavorites(favorites: FavoriteVerse[]) {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
 }
 
+interface ReadingProgressStored {
+  version: string
+  book: string
+  chapter: number
+  bookName: string
+  verse?: number
+}
+
 export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const { theme, setTheme } = useTheme()
   const isDark = theme === "dark"
+  const router = useRouter()
 
   const [mode, setMode] = useState<Mode>("random")
   const [selectedVersion, setSelectedVersion] = useState("NVI")
@@ -90,12 +101,18 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const [hasSearched, setHasSearched] = useState(false)
 
   const [favorites, setFavorites] = useState<FavoriteVerse[]>([])
+  const [readingProgress, setReadingProgress] = useState<ReadingProgressStored | null>(null)
+  const [showReaderModal, setShowReaderModal] = useState(false)
 
   const availableVersions = getAvailableVersions()
   const currentVerse = historyIndex >= 0 ? verseHistory[historyIndex] : null
 
   useEffect(() => {
     setFavorites(loadFavorites())
+    try {
+      const raw = localStorage.getItem("simpleBible:progress")
+      if (raw) setReadingProgress(JSON.parse(raw))
+    } catch { /* sem progresso */ }
     const init = async () => {
       const [verse, daily] = await Promise.all([getRandomVerse("NVI"), getDailyVerse("NVI")])
       if (verse) { setVerseHistory([verse]); setHistoryIndex(0) }
@@ -396,7 +413,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
-              <Button
+<Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowUserInfo(!showUserInfo)}
@@ -469,6 +486,114 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Botão Ler a Bíblia */}
+          <button
+            onClick={() => readingProgress ? setShowReaderModal(true) : router.push("/leitura")}
+            className="w-full group"
+          >
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01]">
+              <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 p-4 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                  <BookMarked className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="font-bold text-white text-base leading-tight">Ler a Bíblia</p>
+                  {readingProgress ? (
+                    <p className="text-white/80 text-xs mt-0.5 truncate">
+                      Continuar: {readingProgress.bookName} {readingProgress.chapter}
+                      {readingProgress.verse ? `:${readingProgress.verse}` : ""}
+                    </p>
+                  ) : (
+                    <p className="text-white/75 text-xs mt-0.5">Leitura corrida · capítulo por capítulo</p>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-white/70 group-hover:translate-x-1 transition-transform shrink-0" />
+              </div>
+            </Card>
+          </button>
+
+          {/* Modal de retomada de leitura */}
+          {showReaderModal && readingProgress && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowReaderModal(false)}>
+              <div className={`w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden ${isDark ? "bg-slate-800" : "bg-white"}`}
+                onClick={e => e.stopPropagation()}>
+                <div className="bg-gradient-to-r from-blue-700 to-sky-500 px-6 pt-5 pb-4">
+                  <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-1">Leitura</p>
+                  <h2 className="text-white font-bold text-lg leading-tight">Como deseja continuar?</h2>
+                </div>
+                <div className="p-6 space-y-3">
+                  {readingProgress.verse ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowReaderModal(false)
+                          const p = readingProgress
+                          router.push(`/leitura?book=${p.book}&chapter=${p.chapter}&verse=${p.verse}&version=${p.version}`)
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-colors
+                          ${isDark ? "border-sky-500 bg-sky-900/30 hover:bg-sky-900/50 text-white" : "border-sky-500 bg-sky-50 hover:bg-sky-100 text-sky-800"}`}>
+                        <p className="font-semibold text-sm">Continuar do versículo marcado</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          {readingProgress.bookName} {readingProgress.chapter}:{readingProgress.verse}
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowReaderModal(false)
+                          const p = readingProgress
+                          router.push(`/leitura?book=${p.book}&chapter=${p.chapter}&version=${p.version}`)
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors
+                          ${isDark ? "border-slate-600 hover:bg-slate-700 text-slate-300" : "border-stone-200 hover:bg-stone-50 text-stone-700"}`}>
+                        <p className="font-semibold text-sm">Abrir o capítulo do início</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                          {readingProgress.bookName} — Capítulo {readingProgress.chapter}
+                        </p>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowReaderModal(false)
+                          const p = readingProgress
+                          router.push(`/leitura?book=${p.book}&chapter=${p.chapter}&version=${p.version}`)
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-colors
+                          ${isDark ? "border-sky-500 bg-sky-900/30 hover:bg-sky-900/50 text-white" : "border-sky-500 bg-sky-50 hover:bg-sky-100 text-sky-800"}`}>
+                        <p className="font-semibold text-sm">Continuar do capítulo {readingProgress.chapter}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          {readingProgress.bookName}
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowReaderModal(false)
+                          const p = readingProgress
+                          const nextChapter = p.chapter + 1
+                          router.push(`/leitura?book=${p.book}&chapter=${nextChapter}&version=${p.version}`)
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors
+                          ${isDark ? "border-slate-600 hover:bg-slate-700 text-slate-300" : "border-stone-200 hover:bg-stone-50 text-stone-700"}`}>
+                        <p className="font-semibold text-sm">Já li o capítulo {readingProgress.chapter}, ir para o {readingProgress.chapter + 1}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                          {readingProgress.bookName}
+                        </p>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => { setShowReaderModal(false); router.push("/leitura") }}
+                    className={`w-full text-center px-4 py-2.5 rounded-xl text-sm transition-colors
+                      ${isDark ? "text-slate-500 hover:text-slate-300" : "text-stone-400 hover:text-stone-600"}`}>
+                    Começar do início (Gênesis 1)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Abas de modo */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
@@ -645,7 +770,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
           </Tabs>
 
           {/* Rodapé */}
-          <div className={`text-center space-y-2 pb-8 ${isDark ? "text-slate-300" : "text-blue-800/90"}`}>
+          <div className={`text-center space-y-2 pb-4 ${isDark ? "text-slate-300" : "text-blue-800/90"}`}>
             <p className="text-base sm:text-lg font-medium drop-shadow-md">
               Que a palavra de Deus ilumine seu dia! ✨
             </p>
@@ -719,7 +844,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
         </SheetContent>
       </Sheet>
 
-      <GoogleButton />
+      <AppFooter />
     </div>
   )
 }
