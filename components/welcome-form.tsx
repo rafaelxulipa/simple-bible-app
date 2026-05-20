@@ -73,7 +73,7 @@ export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="h-12 text-base bg-white border-gray-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl"
+                  className="h-12 text-base text-gray-900 bg-white border-gray-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl placeholder:text-gray-400"
                 />
               </div>
 
@@ -89,7 +89,7 @@ export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
                   value={church}
                   onChange={(e) => setChurch(e.target.value)}
                   required
-                  className="h-12 text-base bg-white border-gray-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl"
+                  className="h-12 text-base text-gray-900 bg-white border-gray-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl placeholder:text-gray-400"
                 />
               </div>
 
