@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Bíblia Sagrada',
@@ -40,13 +42,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo192.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          {children}
+        </ThemeProvider>
+        <Script
+          id="register-sw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js') }`,
+          }}
+        />
+      </body>
     </html>
   )
 }

@@ -1,12 +1,7 @@
-// Importa os arquivos JSON das diferentes versões
-import NVI from "./nvi.json"
-import ACF from "./acf.json"
-import AA from "./aa.json"
-
 export interface BibleBook {
   abbrev: string
   book: string
-  chapters: string[][] // Array de capítulos, cada capítulo é um array de versículos
+  chapters: string[][]
 }
 
 export interface BibleVerse {
@@ -21,89 +16,156 @@ export interface BibleVerse {
 export interface BibleVersion {
   name: string
   abbreviation: string
-  books: BibleBook[]
 }
 
-export const bibleVersions: BibleVersion[] = [
-  {
-    name: "Nova Versão Internacional",
-    abbreviation: "NVI",
-    books: NVI,
-  },
-  {
-    name: "Almeida Corrigida e Fiel",
-    abbreviation: "ACF",
-    books: ACF,
-  },
-  {
-    name: "Almeida Revisada Imprensa Bíblica",
-    abbreviation: "AA",
-    books: AA,
-  },
+const VERSION_META: BibleVersion[] = [
+  { name: "Nova Versão Internacional", abbreviation: "NVI" },
+  { name: "Almeida Corrigida e Fiel", abbreviation: "ACF" },
+  { name: "Almeida Revisada Imprensa Bíblica", abbreviation: "AA" },
 ]
 
-// Função para obter versículo aleatório de uma versão específica
-export function getRandomVerse(versionAbbr = "NVI"): BibleVerse | null {
-  const version = bibleVersions.find((v) => v.abbreviation === versionAbbr)
-  if (!version || version.books.length === 0) return null
+// Cache em memória — cada versão carrega no máximo uma vez por sessão
+const bookCache: Record<string, BibleBook[]> = {}
 
-  // Seleciona um livro aleatório
-  const randomBookIndex = Math.floor(Math.random() * version.books.length)
-  const selectedBook = version.books[randomBookIndex]
+async function loadBooks(versionAbbr: string): Promise<BibleBook[]> {
+  if (bookCache[versionAbbr]) return bookCache[versionAbbr]
 
-  if (!selectedBook.chapters || selectedBook.chapters.length === 0) return null
+  let data: { default: BibleBook[] }
+  if (versionAbbr === "NVI") {
+    data = await import("./nvi.json")
+  } else if (versionAbbr === "ACF") {
+    data = await import("./acf.json")
+  } else {
+    data = await import("./aa.json")
+  }
 
-  // Seleciona um capítulo aleatório
-  const randomChapterIndex = Math.floor(Math.random() * selectedBook.chapters.length)
-  const selectedChapter = selectedBook.chapters[randomChapterIndex]
+  bookCache[versionAbbr] = data.default as BibleBook[]
+  return bookCache[versionAbbr]
+}
 
-  if (!selectedChapter || selectedChapter.length === 0) return null
+export function getAvailableVersions(): BibleVersion[] {
+  return VERSION_META
+}
 
-  // Seleciona um versículo aleatório
-  const randomVerseIndex = Math.floor(Math.random() * selectedChapter.length)
-  const selectedVerse = selectedChapter[randomVerseIndex]
+export async function getRandomVerse(versionAbbr = "NVI"): Promise<BibleVerse | null> {
+  const books = await loadBooks(versionAbbr)
+  if (!books.length) return null
+
+  const bookIndex = Math.floor(Math.random() * books.length)
+  const book = books[bookIndex]
+  if (!book.chapters?.length) return null
+
+  const chapterIndex = Math.floor(Math.random() * book.chapters.length)
+  const chapter = book.chapters[chapterIndex]
+  if (!chapter?.length) return null
+
+  const verseIndex = Math.floor(Math.random() * chapter.length)
 
   return {
-    book: selectedBook.book,
-    abbrev: selectedBook.abbrev,
-    chapter: randomChapterIndex + 1, // +1 porque arrays começam em 0, mas capítulos em 1
-    verse: randomVerseIndex + 1, // +1 porque arrays começam em 0, mas versículos em 1
-    text: selectedVerse,
+    book: book.book,
+    abbrev: book.abbrev,
+    chapter: chapterIndex + 1,
+    verse: verseIndex + 1,
+    text: chapter[verseIndex],
     version: versionAbbr,
   }
 }
 
-// Função para obter todas as versões disponíveis
-export function getAvailableVersions() {
-  return bibleVersions.map((v) => ({
-    name: v.name,
-    abbreviation: v.abbreviation,
+export async function getDailyVerse(versionAbbr = "NVI"): Promise<BibleVerse | null> {
+  const books = await loadBooks(versionAbbr)
+  if (!books.length) return null
+
+  const today = new Date()
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+
+  const bookIndex = seed % books.length
+  const book = books[bookIndex]
+  if (!book.chapters?.length) return null
+
+  const chapterIndex = (seed * 7) % book.chapters.length
+  const chapter = book.chapters[chapterIndex]
+  if (!chapter?.length) return null
+
+  const verseIndex = (seed * 13) % chapter.length
+
+  return {
+    book: book.book,
+    abbrev: book.abbrev,
+    chapter: chapterIndex + 1,
+    verse: verseIndex + 1,
+    text: chapter[verseIndex],
+    version: versionAbbr,
+  }
+}
+
+export async function getBooksFromVersion(versionAbbr: string): Promise<BibleBook[]> {
+  return loadBooks(versionAbbr)
+}
+
+export async function getChapterVerses(
+  versionAbbr: string,
+  bookAbbrev: string,
+  chapter: number,
+): Promise<BibleVerse[]> {
+  const books = await loadBooks(versionAbbr)
+  const book = books.find((b) => b.abbrev === bookAbbrev)
+  if (!book) return []
+
+  const chapterData = book.chapters[chapter - 1]
+  if (!chapterData) return []
+
+  return chapterData.map((text, i) => ({
+    book: book.book,
+    abbrev: book.abbrev,
+    chapter,
+    verse: i + 1,
+    text,
+    version: versionAbbr,
   }))
 }
 
-// Função para obter todos os livros de uma versão
-export function getBooksFromVersion(versionAbbr: string): BibleBook[] {
-  const version = bibleVersions.find((v) => v.abbreviation === versionAbbr)
-  return version ? version.books : []
+export async function searchVerses(versionAbbr: string, query: string): Promise<BibleVerse[]> {
+  const books = await loadBooks(versionAbbr)
+  if (!query.trim()) return []
+
+  const results: BibleVerse[] = []
+  const lower = query.toLowerCase()
+
+  for (const book of books) {
+    for (let c = 0; c < book.chapters.length; c++) {
+      for (let v = 0; v < book.chapters[c].length; v++) {
+        if (book.chapters[c][v].toLowerCase().includes(lower)) {
+          results.push({
+            book: book.book,
+            abbrev: book.abbrev,
+            chapter: c + 1,
+            verse: v + 1,
+            text: book.chapters[c][v],
+            version: versionAbbr,
+          })
+          if (results.length >= 50) return results
+        }
+      }
+    }
+  }
+
+  return results
 }
 
-// Função para obter um versículo específico
-export function getSpecificVerse(
+export async function getSpecificVerse(
   versionAbbr: string,
   bookAbbrev: string,
   chapter: number,
   verse: number,
-): BibleVerse | null {
-  const version = bibleVersions.find((v) => v.abbreviation === versionAbbr)
-  if (!version) return null
-
-  const book = version.books.find((b) => b.abbrev === bookAbbrev)
+): Promise<BibleVerse | null> {
+  const books = await loadBooks(versionAbbr)
+  const book = books.find((b) => b.abbrev === bookAbbrev)
   if (!book) return null
 
-  const chapterData = book.chapters[chapter - 1] // -1 porque arrays começam em 0
+  const chapterData = book.chapters[chapter - 1]
   if (!chapterData) return null
 
-  const verseText = chapterData[verse - 1] // -1 porque arrays começam em 0
+  const verseText = chapterData[verse - 1]
   if (!verseText) return null
 
   return {

@@ -12,6 +12,43 @@ body {
   }
 }
 
+/* ── Animações de nuvens e céu ─────────────────────────────────────────── */
+
+@keyframes cloud-left {
+  0%   { transform: translateX(0) }
+  50%  { transform: translateX(-60px) }
+  100% { transform: translateX(0) }
+}
+@keyframes cloud-right {
+  0%   { transform: translateX(0) }
+  50%  { transform: translateX(50px) }
+  100% { transform: translateX(0) }
+}
+@keyframes cloud-slow {
+  0%   { transform: translateX(0) }
+  50%  { transform: translateX(-30px) }
+  100% { transform: translateX(0) }
+}
+@keyframes ray-pulse {
+  0%, 100% { opacity: 0.04; transform: scaleX(1) }
+  50%       { opacity: 0.13; transform: scaleX(1.06) }
+}
+@keyframes float-card {
+  0%, 100% { transform: translateY(0) }
+  50%       { transform: translateY(-6px) }
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1) }
+  50%       { opacity: 0.9; transform: scale(1.3) }
+}
+
+.cloud-drift-left  { animation: cloud-left  18s ease-in-out infinite; }
+.cloud-drift-right { animation: cloud-right 24s ease-in-out infinite; }
+.cloud-drift-slow  { animation: cloud-slow  32s ease-in-out infinite; }
+.ray-animate       { animation: ray-pulse   6s ease-in-out infinite; }
+.card-float        { animation: float-card  5s ease-in-out infinite; }
+.star-twinkle      { animation: star-twinkle 3s ease-in-out infinite; }
+
 @layer base {
   :root {
     --background: 0 0% 100%;

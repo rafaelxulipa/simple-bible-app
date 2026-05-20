@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Livro aberto (azul/amarelo) -->
+  <!-- Capa amarela -->
+  <path d="M4 44 Q4 52 32 52 Q60 52 60 44 L60 28 Q60 36 32 36 Q4 36 4 28 Z" fill="#f5c518"/>
+  <!-- Páginas esquerda -->
+  <path d="M4 28 Q4 44 32 44 L32 28 Q18 28 4 28 Z" fill="#bfdbfe"/>
+  <!-- Páginas direita -->
+  <path d="M60 28 Q60 44 32 44 L32 28 Q46 28 60 28 Z" fill="#93c5fd"/>
+  <!-- Lombada -->
+  <rect x="30" y="28" width="4" height="16" fill="#2563eb"/>
+  <!-- Ondas das páginas -->
+  <path d="M4 34 Q10 31 16 34 Q22 37 28 34" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M36 34 Q42 31 48 34 Q54 37 60 34" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Cruz amarela -->
+  <rect x="27" y="6" width="10" height="24" rx="2" fill="#f5c518"/>
+  <rect x="20" y="13" width="24" height="10" rx="2" fill="#f5c518"/>
+  <!-- Sombra/profundidade da cruz -->
+  <rect x="27" y="6" width="4" height="24" rx="2" fill="#d4a017" opacity="0.4"/>
+  <rect x="20" y="13" width="24" height="4" rx="2" fill="#d4a017" opacity="0.4"/>
+
+  <!-- Raios de luz -->
+  <line x1="23" y1="22" x2="18" y2="27" stroke="#f5c518" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <line x1="41" y1="22" x2="46" y2="27" stroke="#f5c518" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <line x1="22" y1="19" x2="16" y2="19" stroke="#f5c518" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="42" y1="19" x2="48" y2="19" stroke="#f5c518" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+</svg>
