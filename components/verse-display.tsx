@@ -29,6 +29,7 @@ import {
   type BibleBook,
 } from "@/data/bible-verses"
 import { AppFooter } from "@/components/google-button"
+import { CelestialBackground } from "@/components/celestial-background"
 
 interface UserData {
   name: string
@@ -367,27 +368,21 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background */}
-      <div className={`fixed inset-0 bg-gradient-to-b ${bg}`}>
-        {!isDark && (
-          <>
-            <div className="absolute top-10 left-10 w-32 h-16 bg-white/30 rounded-full blur-sm animate-pulse" />
-            <div className="absolute top-20 right-20 w-40 h-20 bg-white/20 rounded-full blur-sm animate-pulse delay-1000" />
-            <div className="absolute top-32 left-1/3 w-28 h-14 bg-white/25 rounded-full blur-sm animate-pulse delay-500" />
-            <div className="absolute top-40 right-1/3 w-36 h-18 bg-white/15 rounded-full blur-sm animate-pulse delay-1500" />
-          </>
-        )}
-      </div>
+      {isDark ? (
+        <div className={`fixed inset-0 bg-gradient-to-b ${bg}`} />
+      ) : (
+        <CelestialBackground />
+      )}
 
       <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className={headerText}>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold drop-shadow-lg">
+            <div className={`${headerText} ${!isDark ? "bg-black/20 backdrop-blur-sm rounded-2xl px-4 py-3" : ""}`}>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold [text-shadow:0_2px_8px_rgba(0,0,0,0.4)]">
                 Olá, {userData.name}! 🙏
               </h1>
-              <p className={`${subText} capitalize text-sm sm:text-base drop-shadow-md`}>{getCurrentTime()}</p>
+              <p className={`${subText} capitalize text-sm sm:text-base [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]`}>{getCurrentTime()}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button
@@ -776,6 +771,8 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
             </p>
             <p className="text-sm drop-shadow-md">Igreja: {userData.church}</p>
           </div>
+
+          <AppFooter />
         </div>
       </div>
 
@@ -844,7 +841,6 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
         </SheetContent>
       </Sheet>
 
-      <AppFooter />
     </div>
   )
 }

@@ -2,10 +2,14 @@
 
 import Link from "next/link"
 import { Shield, ExternalLink } from "lucide-react"
+import { useTheme } from "next-themes"
 
 const PLAY_URL = "https://play.google.com/store/apps/details?id=com.rafaelxulipa.simplebibleappmobile"
 
 export function AppFooter() {
+  const { theme } = useTheme()
+  const isDark = theme === "dark"
+
   return (
     <div className="relative z-10 w-full pb-6 px-4">
       <div className="max-w-sm mx-auto space-y-3">
@@ -15,9 +19,11 @@ export function AppFooter() {
           href={PLAY_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-3 w-full bg-black/80 hover:bg-black
-            backdrop-blur-sm border border-white/10 hover:border-white/20
-            rounded-2xl px-4 py-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+          className={`group flex items-center gap-3 w-full backdrop-blur-sm
+            rounded-2xl px-4 py-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl
+            ${isDark
+              ? "bg-gray-900 hover:bg-black border border-gray-700 hover:border-gray-500"
+              : "bg-black/80 hover:bg-black border border-white/10 hover:border-white/20"}`}
         >
           {/* Ícone Google Play */}
           <svg viewBox="0 0 24 24" className="w-8 h-8 shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -61,13 +67,14 @@ export function AppFooter() {
         {/* Política de Privacidade */}
         <Link
           href="/privacidade"
-          className="group flex items-center justify-center gap-2 w-full
-            bg-white/10 hover:bg-white/20 backdrop-blur-sm
-            border border-white/20 hover:border-white/30
-            rounded-xl px-4 py-2.5 transition-all duration-200"
+          className={`group flex items-center justify-center gap-2 w-full backdrop-blur-sm
+            rounded-xl px-4 py-2.5 transition-all duration-200
+            ${isDark
+              ? "bg-gray-800/90 hover:bg-gray-900 border border-gray-600 hover:border-gray-400"
+              : "bg-white/80 hover:bg-white border border-stone-300 hover:border-stone-400"}`}
         >
-          <Shield className="w-3.5 h-3.5 text-white/50 group-hover:text-white/80 transition-colors" />
-          <span className="text-white/60 group-hover:text-white/90 text-xs font-medium transition-colors">
+          <Shield className={`w-3.5 h-3.5 transition-colors ${isDark ? "text-gray-300 group-hover:text-white" : "text-stone-500 group-hover:text-stone-700"}`} />
+          <span className={`text-xs font-medium transition-colors ${isDark ? "text-gray-300 group-hover:text-white" : "text-stone-600 group-hover:text-stone-800"}`}>
             Política de Privacidade
           </span>
         </Link>
