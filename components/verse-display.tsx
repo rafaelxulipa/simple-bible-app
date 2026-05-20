@@ -71,8 +71,10 @@ interface ReadingProgressStored {
 }
 
 export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
-  const { theme, setTheme } = useTheme()
-  const isDark = theme === "dark"
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isDark = mounted ? resolvedTheme === "dark" : false
   const router = useRouter()
 
   const [mode, setMode] = useState<Mode>("random")
@@ -371,7 +373,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   )
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" suppressHydrationWarning>
       <CelestialBackground />
 
       <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -461,9 +463,9 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                   <SelectTrigger className={`w-full sm:w-64 ${selectStyle} font-medium`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-md">
+                  <SelectContent className={isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white/95 backdrop-blur-md text-gray-900"}>
                     {availableVersions.map((v) => (
-                      <SelectItem key={v.abbreviation} value={v.abbreviation}>
+                      <SelectItem key={v.abbreviation} value={v.abbreviation} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
                         {v.name} ({v.abbreviation})
                       </SelectItem>
                     ))}
@@ -631,9 +633,9 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                         <SelectTrigger className={selectStyle}>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
-                        <SelectContent className="max-h-64 bg-white">
+                        <SelectContent className={`max-h-64 ${isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white text-gray-900"}`}>
                           {books.map((b) => (
-                            <SelectItem key={b.abbrev} value={b.abbrev}>
+                            <SelectItem key={b.abbrev} value={b.abbrev} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
                               {b.book}
                             </SelectItem>
                           ))}
@@ -649,9 +651,9 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                         <SelectTrigger className={selectStyle}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="max-h-64 bg-white">
+                        <SelectContent className={`max-h-64 ${isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white text-gray-900"}`}>
                           {Array.from({ length: chaptersCount }, (_, i) => i + 1).map((n) => (
-                            <SelectItem key={n} value={String(n)}>
+                            <SelectItem key={n} value={String(n)} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
                               Capítulo {n}
                             </SelectItem>
                           ))}
