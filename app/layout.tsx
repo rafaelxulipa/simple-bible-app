@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
+import { TimeThemeInitializer } from '@/components/time-theme-initializer'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
@@ -51,6 +52,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <TimeThemeInitializer />
           {children}
         </ThemeProvider>
         <Script

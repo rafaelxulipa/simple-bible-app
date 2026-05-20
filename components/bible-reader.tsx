@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 import {
@@ -9,6 +10,7 @@ import {
   BookMarked, Bookmark, Type, HelpCircle, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CelestialBackground } from "@/components/celestial-background"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -166,6 +168,7 @@ interface BibleReaderProps {
 }
 
 export function BibleReader({ initialBook, initialChapter, initialVerse, initialVersion }: BibleReaderProps) {
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const isDark = theme === "dark"
 
@@ -187,6 +190,8 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
   const [showTutorial, setShowTutorial] = useState(false)
   const [initialized, setInitialized]  = useState(false)
   const [bookmarkedVerse, setBookmarkedVerse] = useState<number | null>(initialVerse ?? null)
+  const [activeVerse, setActiveVerse]         = useState<BibleVerse | null>(null)
+  const [bookmarkConfirm, setBookmarkConfirm] = useState(false)
   const topRef = useRef<HTMLDivElement>(null)
   const pendingDirRef = useRef<"next" | "prev">("next")
   const pendingScrollVerseRef = useRef<number | null>(initialVerse ?? null)
@@ -332,9 +337,11 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
 
   const bookIdx = books.findIndex(b => b.abbrev === selectedBook)
   const totalChapters = books.reduce((acc, b) => acc + b.chapters.length, 0)
-  const chaptersBeforeBook = books.slice(0, bookIdx).reduce((acc, b) => acc + b.chapters.length, 0)
+  const chaptersBeforeBook = bookIdx > 0 ? books.slice(0, bookIdx).reduce((acc, b) => acc + b.chapters.length, 0) : 0
   const currentChapterGlobal = chaptersBeforeBook + selectedChapter
-  const progressPct = totalChapters > 0 ? Math.round((currentChapterGlobal / totalChapters) * 100) : 0
+  const progressPct = totalChapters > 0 && bookIdx >= 0
+    ? Math.max(1, Math.round((currentChapterGlobal / totalChapters) * 100))
+    : 0
 
   // Só mostra o banner de progresso se for um capítulo diferente do atual
   const showResumeBanner =
@@ -352,13 +359,14 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
 
   /* ── Render ── */
   return (
-    <div className={`min-h-screen ${bg} transition-colors duration-300`}>
+    <div className="min-h-screen relative">
+      <CelestialBackground />
 
       {/* Tutorial */}
       {showTutorial && <ReaderTutorial onClose={() => setShowTutorial(false)} isDark={isDark} />}
 
       {/* ── Header ───────────────────────────────────────────────── */}
-      <header className={`sticky top-0 z-40 border-b ${nav} backdrop-blur-md`}>
+      <header className={`relative z-40 sticky top-0 border-b ${nav} backdrop-blur-md`}>
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link href="/" className={`${muted} hover:text-current transition-colors`}>
             <ArrowLeft className="w-5 h-5" />
@@ -381,11 +389,7 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
               onClick={() => setShowIndex(true)} title="Índice">
               <List className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${muted}`}
-              onClick={() => setTheme(isDark ? "light" : "dark")} title="Tema">
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${muted}`}
+<Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${muted}`}
               onClick={() => setShowSettings(true)} title="Configurações">
               <Settings2 className="w-4 h-4" />
             </Button>
@@ -400,7 +404,7 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
       </header>
 
       {/* ── Conteúdo ─────────────────────────────────────────────── */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-8 py-8">
+      <main className="relative z-10 max-w-3xl mx-auto px-4 sm:px-8 py-8">
         <div ref={topRef} />
 
         {/* Banner "continuar leitura" */}
@@ -427,15 +431,21 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
           </div>
         )}
 
-        {/* Cabeçalho do capítulo */}
-        <div className="text-center mb-10">
-          <h1 className={`text-3xl sm:text-4xl font-bold ${text} tracking-tight`}
-            style={{ fontFamily: "Georgia, serif" }}>
-            {selectedBookData?.book}
-          </h1>
-          <p className={`mt-1 text-lg ${muted}`}>Capítulo {selectedChapter}</p>
-          <div className={`mt-3 w-16 h-0.5 mx-auto ${isDark ? "bg-slate-600" : "bg-stone-300"}`} />
-        </div>
+        {/* Card de leitura */}
+        <div className={`rounded-2xl shadow-xl overflow-hidden ${isDark ? "bg-slate-900/90" : "bg-white/90"} backdrop-blur-md`}>
+          {/* Faixa superior */}
+          <div className="h-1 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-400" />
+
+          <div className="px-4 sm:px-8 py-8">
+          {/* Cabeçalho do capítulo */}
+          <div className="text-center mb-10">
+            <h1 className={`text-3xl sm:text-4xl font-bold ${text} tracking-tight`}
+              style={{ fontFamily: "Georgia, serif" }}>
+              {selectedBookData?.book}
+            </h1>
+            <p className={`mt-1 text-lg ${muted}`}>Capítulo {selectedChapter}</p>
+            <div className={`mt-3 w-16 h-0.5 mx-auto ${isDark ? "bg-slate-600" : "bg-stone-300"}`} />
+          </div>
 
         {/* Versículos */}
         {isLoading ? (
@@ -451,15 +461,13 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
               <div
                 key={v.verse}
                 id={`verse-${v.verse}`}
-                className={`group relative flex gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer
+                onClick={() => { setActiveVerse(v); setBookmarkConfirm(false) }}
+                className={`relative flex gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer select-none
                   ${bookmarkedVerse === v.verse
                     ? isDark
                       ? "bg-amber-900/25 border-l-4 border-amber-500 pl-2"
                       : "bg-amber-50 border-l-4 border-amber-400 pl-2"
-                    : highlightedVerse === v.verse
-                      ? isDark ? "bg-blue-900/40" : "bg-sky-50"
-                      : isDark ? "hover:bg-slate-800" : "hover:bg-stone-50"}`}
-                onClick={() => setHighlightedVerse(highlightedVerse === v.verse ? null : v.verse)}
+                    : isDark ? "hover:bg-slate-800 active:bg-slate-800" : "hover:bg-stone-50 active:bg-stone-100"}`}
               >
                 <span className={`text-xs font-bold pt-1 min-w-[20px] select-none flex flex-col items-center gap-0.5
                   ${bookmarkedVerse === v.verse ? "text-amber-500" : num}`}>
@@ -470,24 +478,6 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
                   style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
                   {v.text}
                 </p>
-                <div className={`flex items-start gap-1 pt-0.5 transition-opacity
-                  ${highlightedVerse === v.verse ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                  <button onClick={(e) => { e.stopPropagation(); toggleFav(v) }}
-                    className={`p-1 rounded transition-colors ${isFav(v) ? "text-red-500" : `${muted} hover:text-red-400`}`}
-                    title="Favoritar">
-                    <Heart className={`w-3.5 h-3.5 ${isFav(v) ? "fill-current" : ""}`} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); bookmarkVerse(v.verse) }}
-                    className={`p-1 rounded transition-colors ${bookmarkedVerse === v.verse ? "text-amber-500" : `${muted} hover:text-amber-400`}`}
-                    title="Marcar onde parei">
-                    <Bookmark className={`w-3.5 h-3.5 ${bookmarkedVerse === v.verse ? "fill-current" : ""}`} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); handleShare(v) }}
-                    className={`p-1 rounded transition-colors ${muted} hover:text-sky-500`}
-                    title="Compartilhar">
-                    <Share2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
               </div>
             ))}
           </div>
@@ -514,7 +504,122 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
         </div>
 
         {copied && <p className={`text-center text-xs mt-4 ${muted}`}>Versículo copiado! ✓</p>}
+          </div>
+          <div className="h-1 bg-gradient-to-r from-sky-300 via-blue-400 to-sky-300" />
+        </div>{/* fim card de leitura */}
       </main>
+
+      {/* ── Modal de ações do versículo ───────────────────────────── */}
+      {activeVerse && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setActiveVerse(null); setBookmarkConfirm(false) }} />
+
+          {/* Painel */}
+          <div
+            className={`relative w-full max-w-sm rounded-2xl shadow-2xl p-6 z-10
+              ${isDark ? "bg-slate-900 text-slate-100" : "bg-white text-stone-900"}`}
+>
+
+
+            {!bookmarkConfirm ? (
+              <>
+                {/* Preview do versículo */}
+                <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${isDark ? "text-slate-400" : "text-stone-400"}`}>
+                  {activeVerse.book} {activeVerse.chapter}:{activeVerse.verse}
+                </p>
+                <p className={`text-sm leading-relaxed mb-6 line-clamp-3 ${isDark ? "text-slate-300" : "text-stone-700"}`}
+                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+                  {activeVerse.text}
+                </p>
+
+                {/* Ações */}
+                <div className="flex flex-col gap-3">
+                  <button type="button"
+                    onClick={() => { toggleFav(activeVerse); setActiveVerse(null) }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors
+                      ${isFav(activeVerse)
+                        ? isDark ? "bg-rose-900/40 text-rose-300" : "bg-rose-50 text-rose-600"
+                        : isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}>
+                    <Heart className={`w-5 h-5 ${isFav(activeVerse) ? "fill-current" : ""}`} />
+                    <span className="font-medium">{isFav(activeVerse) ? "Remover dos favoritos" : "Adicionar aos favoritos"}</span>
+                  </button>
+
+                  <button type="button"
+                    onClick={() => {
+                      if (bookmarkedVerse === activeVerse.verse) {
+                        setBookmarkedVerse(null)
+                        setActiveVerse(null)
+                      } else {
+                        setBookmarkConfirm(true)
+                      }
+                    }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors
+                      ${bookmarkedVerse === activeVerse.verse
+                        ? isDark ? "bg-amber-900/40 text-amber-300" : "bg-amber-50 text-amber-600"
+                        : isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}>
+                    <Bookmark className={`w-5 h-5 ${bookmarkedVerse === activeVerse.verse ? "fill-current" : ""}`} />
+                    <span className="font-medium">
+                      {bookmarkedVerse === activeVerse.verse ? "Remover marcador" : "Marcar onde parei"}
+                    </span>
+                  </button>
+
+                  <button type="button"
+                    onClick={() => {
+                      const txt = `"${activeVerse.text}" — ${activeVerse.book} ${activeVerse.chapter}:${activeVerse.verse} (${version})`
+                      if (navigator.share) {
+                        navigator.share({ text: txt }).catch(() => {})
+                      } else {
+                        navigator.clipboard.writeText(txt).then(() => setCopied(true))
+                      }
+                      setActiveVerse(null)
+                    }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors
+                      ${isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}>
+                    <Share2 className="w-5 h-5" />
+                    <span className="font-medium">Compartilhar versículo</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className={`text-base font-semibold mb-2 ${isDark ? "text-slate-100" : "text-stone-900"}`}>
+                  Marcar onde parei?
+                </p>
+                <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-stone-500"}`}>
+                  O versículo {activeVerse.book} {activeVerse.chapter}:{activeVerse.verse} será salvo como seu marcador de leitura. Você será direcionado à página inicial.
+                </p>
+                <div className="flex gap-3">
+                  <button type="button"
+                    onClick={() => setBookmarkConfirm(false)}
+                    className={`flex-1 py-3 rounded-xl font-medium transition-colors
+                      ${isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}>
+                    Cancelar
+                  </button>
+                  <button type="button"
+                    onClick={() => {
+                      setBookmarkedVerse(activeVerse.verse)
+                      setActiveVerse(null)
+                      setBookmarkConfirm(false)
+                      router.push("/")
+                    }}
+                    className="flex-1 py-3 rounded-xl font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+                    Sim, marcar aqui
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Fechar */}
+            <button type="button"
+              onClick={() => { setActiveVerse(null); setBookmarkConfirm(false) }}
+              className={`absolute top-4 right-4 p-1.5 rounded-full transition-colors
+                ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-stone-400 hover:bg-stone-100"}`}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Sheet: Índice ─────────────────────────────────────────── */}
       <Sheet open={showIndex} onOpenChange={setShowIndex}>

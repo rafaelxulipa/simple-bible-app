@@ -29,10 +29,7 @@ body {
   50%  { transform: translateX(-30px) }
   100% { transform: translateX(0) }
 }
-@keyframes ray-pulse {
-  0%, 100% { opacity: 0.04; transform: scaleX(1) }
-  50%       { opacity: 0.13; transform: scaleX(1.06) }
-}
+
 @keyframes float-card {
   0%, 100% { transform: translateY(0) }
   50%       { transform: translateY(-6px) }
@@ -45,9 +42,34 @@ body {
 .cloud-drift-left  { animation: cloud-left  18s ease-in-out infinite; }
 .cloud-drift-right { animation: cloud-right 24s ease-in-out infinite; }
 .cloud-drift-slow  { animation: cloud-slow  32s ease-in-out infinite; }
-.ray-animate       { animation: ray-pulse   6s ease-in-out infinite; }
+
 .card-float        { animation: float-card  5s ease-in-out infinite; }
 .star-twinkle      { animation: star-twinkle 3s ease-in-out infinite; }
+
+/* ── Animações noturnas ───────────────────────────────────────────── */
+@keyframes star-night {
+  0%, 100% { opacity: 0.15; transform: scale(0.9) }
+  50%       { opacity: 1;    transform: scale(1.4) }
+}
+@keyframes moon-glow {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1)   }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.15) }
+}
+@keyframes shooting-star {
+  0%   { opacity: 0; transform: translateX(0) translateY(0) }
+  10%  { opacity: 1 }
+  100% { opacity: 0; transform: translateX(-300px) translateY(150px) }
+}
+@keyframes cloud-night-drift {
+  0%   { transform: translateX(0) }
+  50%  { transform: translateX(40px) }
+  100% { transform: translateX(0) }
+}
+
+.star-night         { animation: star-night 4s ease-in-out infinite; }
+.moon-pulse         { animation: moon-glow  5s ease-in-out infinite; }
+.shooting           { animation: shooting-star 6s ease-in-out infinite; }
+.cloud-night        { animation: cloud-night-drift 40s ease-in-out infinite; }
 
 /* ── Efeito de virada de página ───────────────────────────────────── */
 @keyframes page-in-next {

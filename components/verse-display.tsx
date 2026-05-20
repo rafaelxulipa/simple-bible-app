@@ -235,7 +235,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const bg = isDark ? "from-slate-900 via-slate-800 to-slate-900" : "from-blue-400 via-blue-300 to-blue-100"
   const headerText = isDark ? "text-slate-100" : "text-white"
   const subText = isDark ? "text-slate-300" : "text-white/90"
-  const panelBg = isDark ? "bg-slate-800/80 border-slate-700" : "bg-white/10 border-white/20"
+  const panelBg = isDark ? "bg-slate-800/80 border-slate-700" : "bg-white/85 backdrop-blur-md border-white/60"
   const cardSolid = isDark ? "bg-slate-800 border-slate-700" : "bg-white/95 border-white/30"
   const labelColor = isDark ? "text-slate-100" : "text-blue-800"
   const mutedText = isDark ? "text-slate-400" : "text-gray-500"
@@ -243,9 +243,13 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const accentText = isDark ? "text-blue-400" : "text-blue-600"
   const selectStyle = isDark
     ? "bg-slate-700 border-slate-600 text-slate-100"
-    : "bg-white/20 border-white/30 text-blue-800"
+    : "bg-white border-blue-200 text-blue-800"
   const btnGhost = isDark ? "text-slate-400 hover:bg-slate-700" : "text-gray-400 hover:bg-gray-100"
   const btnOutline = isDark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : ""
+  const actionBtn = isDark
+    ? "bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+    : "bg-white/90 backdrop-blur-sm border-white/80 text-blue-700 hover:bg-white shadow-sm"
+  const tabsBar = isDark ? "bg-slate-800" : "bg-white/90 backdrop-blur-md shadow-sm"
 
   const selectedBookData = books.find((b) => b.abbrev === selectedBook)
   const chaptersCount = selectedBookData?.chapters.length ?? 0
@@ -368,11 +372,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {isDark ? (
-        <div className={`fixed inset-0 bg-gradient-to-b ${bg}`} />
-      ) : (
-        <CelestialBackground />
-      )}
+      <CelestialBackground />
 
       <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -389,7 +389,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowFavorites(true)}
-                className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 relative"
+                className={`${actionBtn} relative`}
                 title="Favoritos"
               >
                 <Heart className="w-4 h-4" />
@@ -399,20 +399,11 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                   </Badge>
                 )}
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-                title={isDark ? "Modo claro" : "Modo escuro"}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
 <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowUserInfo(!showUserInfo)}
-                className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+                className={actionBtn}
                 title="Configurações"
               >
                 <Settings className="w-4 h-4" />
@@ -592,7 +583,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
 
           {/* Abas de modo */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-            <TabsList className={`w-full ${isDark ? "bg-slate-800" : "bg-white/20 backdrop-blur-sm"}`}>
+            <TabsList className={`w-full ${tabsBar}`}>
               <TabsTrigger value="random" className="flex-1 gap-1 text-xs sm:text-sm">
                 <Shuffle className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Aleatório</span>

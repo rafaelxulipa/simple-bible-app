@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { CelestialBackground } from "@/components/celestial-background"
 
 export function SplashScreen({ onDone }: { onDone: () => void }) {
   const [fading, setFading] = useState(false)
@@ -12,15 +13,11 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
   }, [onDone])
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-blue-500 via-blue-400 to-blue-200 transition-opacity duration-500 ${fading ? "opacity-0" : "opacity-100"}`}
-    >
-      {/* Nuvens */}
-      <div className="absolute top-12 left-10 w-28 h-14 bg-white/30 rounded-full blur-sm animate-pulse" />
-      <div className="absolute top-20 right-16 w-36 h-18 bg-white/20 rounded-full blur-sm animate-pulse delay-700" />
+    <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-500 ${fading ? "opacity-0" : "opacity-100"}`}>
+      <CelestialBackground />
 
       {/* Logo + nome */}
-      <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-700">
+      <div className="relative z-10 flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-700">
         <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo192.png" alt="Bíblia Sagrada" className="w-full h-full object-cover" />
@@ -32,7 +29,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       </div>
 
       {/* Indicador de carregamento */}
-      <div className="absolute bottom-12 flex gap-1.5">
+      <div className="relative z-10 absolute bottom-12 flex gap-1.5">
         <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
         <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
         <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
