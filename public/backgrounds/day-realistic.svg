@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2E8BCB"/>
+    <stop offset=".55" stop-color="#6FC0EA"/>
+    <stop offset="1" stop-color="#DCF2FB"/>
+  </linearGradient>
+  <radialGradient id="sunGlow"><stop stop-color="#FFFBE0" stop-opacity=".65"/><stop offset=".4" stop-color="#FFEFA3" stop-opacity=".22"/><stop offset="1" stop-color="#FFEFA3" stop-opacity="0"/></radialGradient>
+  <radialGradient id="sun"><stop stop-color="#FFFDF0"/><stop offset=".55" stop-color="#FFE98A"/><stop offset="1" stop-color="#FFC94F"/></radialGradient>
+  <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".92"/><stop offset="1" stop-color="#E9F6FB" stop-opacity=".45"/></linearGradient>
+  <filter id="blur40"><feGaussianBlur stdDeviation="40"/></filter>
+  <filter id="blur14"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter>
+</defs>
+
+<rect width="1920" height="1080" fill="url(#sky)"/>
+
+<!-- atmospheric haze -->
+<ellipse cx="960" cy="480" rx="1100" ry="420" fill="#FFFFFF" opacity=".06" filter="url(#blur40)"/>
+
+<!-- sun -->
+<circle cx="1180" cy="220" r="130" fill="url(#sunGlow)" filter="url(#blur40)"/>
+<circle cx="1180" cy="220" r="85" fill="url(#sunGlow)"/>
+<circle cx="1180" cy="220" r="48" fill="url(#sun)"/>
+<circle cx="1165" cy="205" r="28" fill="#FFFDEB" opacity=".16" filter="url(#blur6)"/>
+
+<!-- cloud cluster: left, near horizon of top third -->
+<g fill="url(#cloud)" opacity=".82" filter="url(#blur14)">
+  <ellipse cx="230" cy="260" rx="150" ry="46"/>
+  <ellipse cx="330" cy="238" rx="120" ry="60"/>
+  <ellipse cx="440" cy="270" rx="150" ry="46"/>
+</g>
+<g fill="#FFFFFF" opacity=".28">
+  <ellipse cx="320" cy="252" rx="88" ry="32"/>
+</g>
+
+<!-- cloud cluster: far right, mid height -->
+<g fill="url(#cloud)" opacity=".7" filter="url(#blur14)">
+  <ellipse cx="1560" cy="410" rx="190" ry="52"/>
+  <ellipse cx="1670" cy="388" rx="150" ry="65"/>
+  <ellipse cx="1780" cy="420" rx="170" ry="50"/>
+</g>
+<g fill="#FFFFFF" opacity=".22">
+  <ellipse cx="1660" cy="400" rx="92" ry="34"/>
+</g>
+
+<!-- cloud cluster: center, lower -->
+<g fill="url(#cloud)" opacity=".58" filter="url(#blur14)">
+  <ellipse cx="760" cy="560" rx="170" ry="48"/>
+  <ellipse cx="860" cy="538" rx="130" ry="58"/>
+  <ellipse cx="970" cy="568" rx="160" ry="46"/>
+</g>
+
+<!-- smaller drifting clouds -->
+<g fill="url(#cloud)" opacity=".45" filter="url(#blur14)">
+  <ellipse cx="120" cy="640" rx="150" ry="42"/>
+  <ellipse cx="1380" cy="700" rx="180" ry="48"/>
+</g>
+
+<!-- distant low haze clouds -->
+<g fill="#FFFFFF" opacity=".12" filter="url(#blur40)">
+  <ellipse cx="500" cy="840" rx="380" ry="95"/>
+  <ellipse cx="1520" cy="900" rx="420" ry="105"/>
+</g>
+</svg>

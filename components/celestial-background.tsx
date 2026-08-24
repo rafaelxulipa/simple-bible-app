@@ -222,8 +222,11 @@ function NightSky() {
   )
 }
 
-/* ── Componente principal ────────────────────────────────────────── */
-export function CelestialBackground() {
+/* ── Implementação animada anterior (CSS) ─────────────────────────
+   Mantida aqui, só não é mais o que é renderizado por padrão — veja
+   CelestialBackground() abaixo. Pra voltar a usá-la, troque o corpo
+   de CelestialBackground() para renderizar <AnimatedCelestialBackground />. */
+export function AnimatedCelestialBackground() {
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -234,4 +237,25 @@ export function CelestialBackground() {
   }
 
   return theme === "dark" ? <NightSky /> : <DaySky />
+}
+
+/* ── Componente principal — background estático em SVG (day-realistic.svg / night-realistic.svg) ── */
+export function CelestialBackground() {
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  if (!mounted) {
+    return <div className="fixed inset-0 bg-gradient-to-b from-sky-600 via-sky-300 to-amber-50" />
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-cover bg-center"
+      style={{
+        backgroundImage: `url(${theme === "dark" ? "/backgrounds/night-realistic.svg" : "/backgrounds/day-realistic.svg"})`,
+      }}
+    />
+  )
 }

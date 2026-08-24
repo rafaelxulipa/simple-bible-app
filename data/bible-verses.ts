@@ -47,7 +47,7 @@ export function getAvailableVersions(): BibleVersion[] {
   return VERSION_META
 }
 
-export async function getRandomVerse(versionAbbr = "NVI"): Promise<BibleVerse | null> {
+export async function getRandomVerse(versionAbbr = "ACF"): Promise<BibleVerse | null> {
   const books = await loadBooks(versionAbbr)
   if (!books.length) return null
 
@@ -71,7 +71,7 @@ export async function getRandomVerse(versionAbbr = "NVI"): Promise<BibleVerse | 
   }
 }
 
-export async function getDailyVerse(versionAbbr = "NVI"): Promise<BibleVerse | null> {
+export async function getDailyVerse(versionAbbr = "ACF"): Promise<BibleVerse | null> {
   const books = await loadBooks(versionAbbr)
   if (!books.length) return null
 

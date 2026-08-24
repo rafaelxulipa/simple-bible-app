@@ -168,7 +168,7 @@ interface BibleReaderProps {
 
 export function BibleReader({ initialBook, initialChapter, initialVerse, initialVersion }: BibleReaderProps) {
   const router = useRouter()
-  const [version, setVersion]           = useState(initialVersion ?? "NVI")
+  const [version, setVersion]           = useState(initialVersion ?? "ACF")
   const [books, setBooks]               = useState<BibleBook[]>([])
   const [selectedBook, setSelectedBook] = useState(initialBook ?? "")
   const [selectedChapter, setSelectedChapter] = useState(initialChapter ?? 1)

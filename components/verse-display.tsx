@@ -33,6 +33,7 @@ import { CelestialBackground } from "@/components/celestial-background"
 import { NotificationSettingsModal } from "@/components/notification-settings-modal"
 import { DailyVerseNotificationModal } from "@/components/daily-verse-notification-modal"
 import { useDailyVerseNotifications } from "@/hooks/use-daily-verse-notifications"
+import { THEME_OVERRIDE_KEY } from "@/components/time-theme-initializer"
 
 interface UserData {
   name: string
@@ -80,8 +81,13 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const isDark = mounted ? resolvedTheme === "dark" : false
   const router = useRouter()
 
+  const toggleTheme = () => {
+    localStorage.setItem(THEME_OVERRIDE_KEY, "true")
+    setTheme(isDark ? "light" : "dark")
+  }
+
   const [mode, setMode] = useState<Mode>("random")
-  const [selectedVersion, setSelectedVersion] = useState("NVI")
+  const [selectedVersion, setSelectedVersion] = useState("ACF")
   const [isLoading, setIsLoading] = useState(false)
   const [showUserInfo, setShowUserInfo] = useState(false)
   const [showFavorites, setShowFavorites] = useState(false)
@@ -123,7 +129,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
       if (raw) setReadingProgress(JSON.parse(raw))
     } catch { /* sem progresso */ }
     const init = async () => {
-      const [verse, daily] = await Promise.all([getRandomVerse("NVI"), getDailyVerse("NVI")])
+      const [verse, daily] = await Promise.all([getRandomVerse("ACF"), getDailyVerse("ACF")])
       if (verse) { setVerseHistory([verse]); setHistoryIndex(0) }
       setDailyVerse(daily)
     }
@@ -393,6 +399,15 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
               <p className={`${subText} capitalize text-sm sm:text-base [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]`}>{getCurrentTime()}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={toggleTheme}
+                className={actionBtn}
+                title={isDark ? "Modo claro" : "Modo escuro"}
+              >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
