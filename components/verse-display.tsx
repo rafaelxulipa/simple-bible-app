@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   RefreshCw, Settings, BookOpen, User, Church, Book, X,
   Heart, Share2, Moon, Sun, Search, ChevronLeft, ChevronRight,
-  Shuffle, Calendar, Map, BookMarked,
+  Shuffle, Calendar, Map, BookMarked, Bell,
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -30,6 +30,9 @@ import {
 } from "@/data/bible-verses"
 import { AppFooter } from "@/components/google-button"
 import { CelestialBackground } from "@/components/celestial-background"
+import { NotificationSettingsModal } from "@/components/notification-settings-modal"
+import { DailyVerseNotificationModal } from "@/components/daily-verse-notification-modal"
+import { useDailyVerseNotifications } from "@/hooks/use-daily-verse-notifications"
 
 interface UserData {
   name: string
@@ -106,6 +109,9 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   const [favorites, setFavorites] = useState<FavoriteVerse[]>([])
   const [readingProgress, setReadingProgress] = useState<ReadingProgressStored | null>(null)
   const [showReaderModal, setShowReaderModal] = useState(false)
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false)
+
+  const { pendingVerse, clearPendingVerse } = useDailyVerseNotifications(selectedVersion)
 
   const availableVersions = getAvailableVersions()
   const currentVerse = historyIndex >= 0 ? verseHistory[historyIndex] : null
@@ -401,7 +407,16 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                   </Badge>
                 )}
               </Button>
-<Button
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowNotificationSettings(true)}
+                className={actionBtn}
+                title="Notificações"
+              >
+                <Bell className="w-4 h-4" />
+              </Button>
+              <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowUserInfo(!showUserInfo)}
@@ -834,6 +849,8 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
         </SheetContent>
       </Sheet>
 
+      <NotificationSettingsModal open={showNotificationSettings} onClose={() => setShowNotificationSettings(false)} />
+      <DailyVerseNotificationModal verse={pendingVerse} onClose={clearPendingVerse} />
     </div>
   )
 }
