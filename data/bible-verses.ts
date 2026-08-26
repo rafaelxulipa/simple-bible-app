@@ -22,7 +22,48 @@ const VERSION_META: BibleVersion[] = [
   { name: "Nova Versão Internacional", abbreviation: "NVI" },
   { name: "Almeida Corrigida e Fiel", abbreviation: "ACF" },
   { name: "Almeida Revisada Imprensa Bíblica", abbreviation: "AA" },
+  { name: "Almeida 1911", abbreviation: "ALM1911" },
+  { name: "Almeida Revista e Atualizada", abbreviation: "ARA" },
+  { name: "Almeida Revista e Corrigida", abbreviation: "ARC" },
+  { name: "Almeida Século 21", abbreviation: "AS21" },
+  { name: "Bíblia Livre", abbreviation: "BLIVRE" },
+  { name: "João Ferreira de Almeida Atualizada", abbreviation: "JFAA" },
+  { name: "King James Atualizada", abbreviation: "KJA" },
+  { name: "King James Fiel", abbreviation: "KJF" },
+  { name: "A Mensagem", abbreviation: "MENS" },
+  { name: "Nova Almeida Atualizada", abbreviation: "NAA" },
+  { name: "Nova Bíblia Viva", abbreviation: "NBV" },
+  { name: "Nova Tradução na Linguagem de Hoje", abbreviation: "NTLH" },
+  { name: "Nova Versão Transformadora", abbreviation: "NVT" },
+  { name: "O Livro", abbreviation: "OL" },
+  { name: "Tradução Brasileira", abbreviation: "TB" },
+  { name: "Versão Fácil de Ler", abbreviation: "VFL" },
 ]
+
+// Versão padrão do aplicativo até o usuário escolher outra
+export const DEFAULT_VERSION_ABBR = "ARC"
+
+const VERSION_LOADERS: Record<string, () => Promise<{ default: BibleBook[] }>> = {
+  NVI: () => import("./nvi.json"),
+  ACF: () => import("./acf.json"),
+  AA: () => import("./aa.json"),
+  ALM1911: () => import("./alm1911.json"),
+  ARA: () => import("./ara.json"),
+  ARC: () => import("./arc.json"),
+  AS21: () => import("./as21.json"),
+  BLIVRE: () => import("./blivre.json"),
+  JFAA: () => import("./jfaa.json"),
+  KJA: () => import("./kja.json"),
+  KJF: () => import("./kjf.json"),
+  MENS: () => import("./mens.json"),
+  NAA: () => import("./naa.json"),
+  NBV: () => import("./nbv.json"),
+  NTLH: () => import("./ntlh.json"),
+  NVT: () => import("./nvt.json"),
+  OL: () => import("./ol.json"),
+  TB: () => import("./tb.json"),
+  VFL: () => import("./vfl.json"),
+}
 
 // Cache em memória — cada versão carrega no máximo uma vez por sessão
 const bookCache: Record<string, BibleBook[]> = {}
@@ -30,14 +71,8 @@ const bookCache: Record<string, BibleBook[]> = {}
 async function loadBooks(versionAbbr: string): Promise<BibleBook[]> {
   if (bookCache[versionAbbr]) return bookCache[versionAbbr]
 
-  let data: { default: BibleBook[] }
-  if (versionAbbr === "NVI") {
-    data = await import("./nvi.json")
-  } else if (versionAbbr === "ACF") {
-    data = await import("./acf.json")
-  } else {
-    data = await import("./aa.json")
-  }
+  const loader = VERSION_LOADERS[versionAbbr] ?? VERSION_LOADERS[DEFAULT_VERSION_ABBR]
+  const data = await loader()
 
   bookCache[versionAbbr] = data.default as BibleBook[]
   return bookCache[versionAbbr]
@@ -47,7 +82,7 @@ export function getAvailableVersions(): BibleVersion[] {
   return VERSION_META
 }
 
-export async function getRandomVerse(versionAbbr = "ACF"): Promise<BibleVerse | null> {
+export async function getRandomVerse(versionAbbr = DEFAULT_VERSION_ABBR): Promise<BibleVerse | null> {
   const books = await loadBooks(versionAbbr)
   if (!books.length) return null
 
@@ -71,7 +106,7 @@ export async function getRandomVerse(versionAbbr = "ACF"): Promise<BibleVerse | 
   }
 }
 
-export async function getDailyVerse(versionAbbr = "ACF"): Promise<BibleVerse | null> {
+export async function getDailyVerse(versionAbbr = DEFAULT_VERSION_ABBR): Promise<BibleVerse | null> {
   const books = await loadBooks(versionAbbr)
   if (!books.length) return null
 

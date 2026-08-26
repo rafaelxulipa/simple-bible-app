@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,9 +24,12 @@ import {
   getBooksFromVersion,
   getChapterVerses,
   searchVerses,
+  DEFAULT_VERSION_ABBR,
   type BibleVerse,
   type BibleBook,
 } from "@/data/bible-verses"
+import { getSelectedVersion, saveSelectedVersion } from "@/lib/version-storage"
+import { SearchableSelect } from "@/components/searchable-select"
 import { AppFooter } from "@/components/google-button"
 import { CelestialBackground } from "@/components/celestial-background"
 import { NotificationSettingsModal } from "@/components/notification-settings-modal"
@@ -47,6 +49,7 @@ interface FavoriteVerse extends BibleVerse {
 interface VerseDisplayProps {
   userData: UserData
   onReset: () => void
+  onUpdateUserData: (data: UserData) => void
 }
 
 type Mode = "random" | "daily" | "navigate" | "search"
@@ -74,7 +77,7 @@ interface ReadingProgressStored {
   verse?: number
 }
 
-export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
+export function VerseDisplay({ userData, onReset, onUpdateUserData }: VerseDisplayProps) {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -87,11 +90,14 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
   }
 
   const [mode, setMode] = useState<Mode>("random")
-  const [selectedVersion, setSelectedVersion] = useState("ACF")
+  const [selectedVersion, setSelectedVersion] = useState(DEFAULT_VERSION_ABBR)
   const [isLoading, setIsLoading] = useState(false)
   const [showUserInfo, setShowUserInfo] = useState(false)
   const [showFavorites, setShowFavorites] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [editName, setEditName] = useState(userData.name)
+  const [editChurch, setEditChurch] = useState(userData.church)
+  const [profileSaved, setProfileSaved] = useState(false)
 
   // Modo aleatório — histórico para prev/next
   const [verseHistory, setVerseHistory] = useState<BibleVerse[]>([])
@@ -129,7 +135,9 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
       if (raw) setReadingProgress(JSON.parse(raw))
     } catch { /* sem progresso */ }
     const init = async () => {
-      const [verse, daily] = await Promise.all([getRandomVerse("ACF"), getDailyVerse("ACF")])
+      const storedVersion = getSelectedVersion() ?? DEFAULT_VERSION_ABBR
+      setSelectedVersion(storedVersion)
+      const [verse, daily] = await Promise.all([getRandomVerse(storedVersion), getDailyVerse(storedVersion)])
       if (verse) { setVerseHistory([verse]); setHistoryIndex(0) }
       setDailyVerse(daily)
     }
@@ -185,11 +193,21 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
 
   const handleVersionChange = async (version: string) => {
     setSelectedVersion(version)
+    saveSelectedVersion(version)
     setSearchResults([])
     setHasSearched(false)
     const [verse, daily] = await Promise.all([getRandomVerse(version), getDailyVerse(version)])
     if (verse) { setVerseHistory([verse]); setHistoryIndex(0) }
     setDailyVerse(daily)
+  }
+
+  const isProfileDirty = editName.trim() !== userData.name || editChurch.trim() !== userData.church
+  const canSaveProfile = editName.trim().length > 0 && editChurch.trim().length > 0 && isProfileDirty
+
+  const handleSaveProfile = () => {
+    if (!canSaveProfile) return
+    onUpdateUserData({ name: editName.trim(), church: editChurch.trim() })
+    setProfileSaved(true)
   }
 
   const handleShare = async (verse: BibleVerse) => {
@@ -434,7 +452,14 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowUserInfo(!showUserInfo)}
+                onClick={() => {
+                  if (!showUserInfo) {
+                    setEditName(userData.name)
+                    setEditChurch(userData.church)
+                    setProfileSaved(false)
+                  }
+                  setShowUserInfo(!showUserInfo)
+                }}
                 className={actionBtn}
                 title="Configurações"
               >
@@ -446,37 +471,62 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
           {/* User Info (colapsível) */}
           {showUserInfo && (
             <Card className={`${panelBg} backdrop-blur-md animate-in slide-in-from-top-2 duration-300`}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-3">
-                    <div className={`flex items-center gap-2 text-sm ${labelColor}`}>
-                      <User className="w-4 h-4" />
-                      <span>Nome: {userData.name}</span>
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${labelColor}`}>
-                      <Church className="w-4 h-4" />
-                      <span>Igreja: {userData.church}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onReset}
-                      className="text-red-600 hover:text-white bg-red-500/20 border-red-600 hover:bg-red-500/30"
-                    >
-                      Redefinir
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowUserInfo(false)}
-                      className="text-white/70 hover:text-white hover:bg-white/10"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`text-sm font-semibold ${labelColor}`}>Configurações</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowUserInfo(false)}
+                    className="text-white/70 hover:text-white hover:bg-white/10 -mt-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className={`flex items-center gap-2 text-xs font-medium ${labelColor}`}>
+                    <User className="w-3.5 h-3.5" />
+                    Seu nome
+                  </label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => { setEditName(e.target.value); setProfileSaved(false) }}
+                    placeholder="Como você se chama?"
+                    className={`${selectStyle}`}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={`flex items-center gap-2 text-xs font-medium ${labelColor}`}>
+                    <Church className="w-3.5 h-3.5" />
+                    Sua igreja
+                  </label>
+                  <Input
+                    value={editChurch}
+                    onChange={(e) => { setEditChurch(e.target.value); setProfileSaved(false) }}
+                    placeholder="Nome da sua igreja"
+                    className={`${selectStyle}`}
+                  />
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  disabled={!canSaveProfile}
+                  className="w-full bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-50"
+                >
+                  {profileSaved ? "Alterações salvas ✓" : "Salvar alterações"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onReset}
+                  className="w-full text-red-600 hover:text-white bg-red-500/10 border-red-600/50 hover:bg-red-500/30"
+                >
+                  Redefinir dados
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -489,18 +539,13 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                   <Book className="w-5 h-5 text-yellow-300" />
                   <span className="text-sm font-medium">Versão da Bíblia:</span>
                 </div>
-                <Select value={selectedVersion} onValueChange={handleVersionChange}>
-                  <SelectTrigger className={`w-full sm:w-64 ${selectStyle} font-medium`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className={isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white/95 backdrop-blur-md text-gray-900"}>
-                    {availableVersions.map((v) => (
-                      <SelectItem key={v.abbreviation} value={v.abbreviation} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
-                        {v.name} ({v.abbreviation})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={selectedVersion}
+                  onValueChange={handleVersionChange}
+                  options={availableVersions.map((v) => ({ value: v.abbreviation, label: v.name, sublabel: v.abbreviation }))}
+                  searchPlaceholder="Buscar versão..."
+                  className={`w-full sm:w-64 ${selectStyle} font-medium`}
+                />
               </div>
             </CardContent>
           </Card>
@@ -554,7 +599,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                           ${isDark ? "border-sky-500 bg-sky-900/30 hover:bg-sky-900/50 text-white" : "border-sky-500 bg-sky-50 hover:bg-sky-100 text-sky-800"}`}>
                         <p className="font-semibold text-sm">Continuar do versículo marcado</p>
                         <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          {readingProgress.bookName} {readingProgress.chapter}:{readingProgress.verse}
+                          {readingProgress.bookName} {readingProgress.chapter}:{readingProgress.verse} · {readingProgress.version}
                         </p>
                       </button>
                       <button
@@ -567,7 +612,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                           ${isDark ? "border-slate-600 hover:bg-slate-700 text-slate-300" : "border-stone-200 hover:bg-stone-50 text-stone-700"}`}>
                         <p className="font-semibold text-sm">Abrir o capítulo do início</p>
                         <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                          {readingProgress.bookName} — Capítulo {readingProgress.chapter}
+                          {readingProgress.bookName} — Capítulo {readingProgress.chapter} · {readingProgress.version}
                         </p>
                       </button>
                     </>
@@ -583,7 +628,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                           ${isDark ? "border-sky-500 bg-sky-900/30 hover:bg-sky-900/50 text-white" : "border-sky-500 bg-sky-50 hover:bg-sky-100 text-sky-800"}`}>
                         <p className="font-semibold text-sm">Continuar do capítulo {readingProgress.chapter}</p>
                         <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          {readingProgress.bookName}
+                          {readingProgress.bookName} · {readingProgress.version}
                         </p>
                       </button>
                       <button
@@ -597,7 +642,7 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                           ${isDark ? "border-slate-600 hover:bg-slate-700 text-slate-300" : "border-stone-200 hover:bg-stone-50 text-stone-700"}`}>
                         <p className="font-semibold text-sm">Já li o capítulo {readingProgress.chapter}, ir para o {readingProgress.chapter + 1}</p>
                         <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                          {readingProgress.bookName}
+                          {readingProgress.bookName} · {readingProgress.version}
                         </p>
                       </button>
                     </>
@@ -656,39 +701,24 @@ export function VerseDisplay({ userData, onReset }: VerseDisplayProps) {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={`text-sm font-medium mb-1 block ${labelColor}`}>Livro</label>
-                      <Select
+                      <SearchableSelect
                         value={selectedBook}
                         onValueChange={(v) => { setSelectedBook(v); setSelectedChapter(1) }}
-                      >
-                        <SelectTrigger className={selectStyle}>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent className={`max-h-64 ${isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white text-gray-900"}`}>
-                          {books.map((b) => (
-                            <SelectItem key={b.abbrev} value={b.abbrev} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
-                              {b.book}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={books.map((b) => ({ value: b.abbrev, label: b.book }))}
+                        placeholder="Selecione..."
+                        searchPlaceholder="Buscar livro..."
+                        className={selectStyle}
+                      />
                     </div>
                     <div>
                       <label className={`text-sm font-medium mb-1 block ${labelColor}`}>Capítulo</label>
-                      <Select
+                      <SearchableSelect
                         value={String(selectedChapter)}
                         onValueChange={(v) => setSelectedChapter(Number(v))}
-                      >
-                        <SelectTrigger className={selectStyle}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className={`max-h-64 ${isDark ? "bg-slate-800 border-slate-600 text-slate-100" : "bg-white text-gray-900"}`}>
-                          {Array.from({ length: chaptersCount }, (_, i) => i + 1).map((n) => (
-                            <SelectItem key={n} value={String(n)} className={isDark ? "text-slate-100 focus:bg-slate-700 focus:text-white" : ""}>
-                              Capítulo {n}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={Array.from({ length: chaptersCount }, (_, i) => i + 1).map((n) => ({ value: String(n), label: `Capítulo ${n}` }))}
+                        searchPlaceholder="Buscar capítulo..."
+                        className={selectStyle}
+                      />
                     </div>
                   </div>
                 </CardContent>

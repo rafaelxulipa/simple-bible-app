@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Church, User } from "lucide-react"
+import { Church, User, BookOpen } from "lucide-react"
 import { AppFooter } from "@/components/google-button"
 import { CelestialBackground } from "@/components/celestial-background"
+import { SearchableSelect } from "@/components/searchable-select"
+import { getAvailableVersions, DEFAULT_VERSION_ABBR } from "@/data/bible-verses"
+import { saveSelectedVersion } from "@/lib/version-storage"
 
 interface UserData {
   name: string
@@ -21,10 +24,18 @@ interface WelcomeFormProps {
 export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
   const [name, setName] = useState("")
   const [church, setChurch] = useState("")
+  const [version, setVersion] = useState(DEFAULT_VERSION_ABBR)
+  const availableVersions = getAvailableVersions()
+  const versionOptions = availableVersions.map((v) => ({
+    value: v.abbreviation,
+    label: v.name,
+    sublabel: v.abbreviation,
+  }))
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim() && church.trim()) {
+      saveSelectedVersion(version)
       onSubmit({ name: name.trim(), church: church.trim() })
     }
   }
@@ -90,6 +101,20 @@ export function WelcomeForm({ onSubmit }: WelcomeFormProps) {
                   onChange={(e) => setChurch(e.target.value)}
                   required
                   className="h-12 text-base text-gray-900 bg-white border-gray-200 focus:border-sky-400 focus:ring-sky-400 rounded-xl placeholder:text-gray-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-sky-500" />
+                  Versão da Bíblia
+                </Label>
+                <SearchableSelect
+                  value={version}
+                  onValueChange={setVersion}
+                  options={versionOptions}
+                  searchPlaceholder="Buscar versão..."
+                  className="h-12 text-base text-gray-900 bg-white border-gray-200 rounded-xl"
                 />
               </div>
 

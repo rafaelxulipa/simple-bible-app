@@ -33,6 +33,11 @@ export default function HomePage() {
     setUserData(null)
   }
 
+  const handleUpdateUserData = (data: UserData) => {
+    localStorage.setItem("simpleBible:user", JSON.stringify(data))
+    setUserData(data)
+  }
+
   const handleSplashDone = useCallback(() => setShowSplash(false), [])
 
   if (!mounted || showSplash) {
@@ -40,6 +45,6 @@ export default function HomePage() {
   }
 
   return userData
-    ? <VerseDisplay userData={userData} onReset={handleReset} />
+    ? <VerseDisplay userData={userData} onReset={handleReset} onUpdateUserData={handleUpdateUserData} />
     : <WelcomeForm onSubmit={handleSubmit} />
 }

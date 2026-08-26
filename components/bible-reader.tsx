@@ -6,22 +6,23 @@ import Link from "next/link"
 import {
   ChevronLeft, ChevronRight, BookOpen, Settings2,
   Heart, Share2, ArrowLeft, List, Moon, Sun,
-  BookMarked, Bookmark, Type, HelpCircle, X,
+  BookMarked, Bookmark, Type, HelpCircle, X, Search,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CelestialBackground } from "@/components/celestial-background"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import {
-  getAvailableVersions,
   getBooksFromVersion,
   getChapterVerses,
+  DEFAULT_VERSION_ABBR,
   type BibleBook,
   type BibleVerse,
 } from "@/data/bible-verses"
+import { getSelectedVersion } from "@/lib/version-storage"
 
 /* ── Constantes ─────────────────────────────────────────────────── */
 
@@ -73,6 +74,10 @@ const TUTORIAL_STEPS = [
     desc: 'Toque em ⚙ (configurações) para ajustar o tamanho do texto entre quatro tamanhos (P, M, G, GG) e para pular direto para qualquer capítulo do livro atual. Também há o botão de modo escuro 🌙.',
   },
 ]
+
+function normalizeSearch(s: string) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+}
 
 /* ── Funções de storage ─────────────────────────────────────────── */
 
@@ -168,7 +173,7 @@ interface BibleReaderProps {
 
 export function BibleReader({ initialBook, initialChapter, initialVerse, initialVersion }: BibleReaderProps) {
   const router = useRouter()
-  const [version, setVersion]           = useState(initialVersion ?? "ACF")
+  const [version, setVersion]           = useState(initialVersion ?? DEFAULT_VERSION_ABBR)
   const [books, setBooks]               = useState<BibleBook[]>([])
   const [selectedBook, setSelectedBook] = useState(initialBook ?? "")
   const [selectedChapter, setSelectedChapter] = useState(initialChapter ?? 1)
@@ -188,11 +193,12 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
   const [bookmarkedVerse, setBookmarkedVerse] = useState<number | null>(initialVerse ?? null)
   const [activeVerse, setActiveVerse]         = useState<BibleVerse | null>(null)
   const [bookmarkConfirm, setBookmarkConfirm] = useState(false)
+  const [bookSearch, setBookSearch] = useState("")
+  const [chapterSearch, setChapterSearch] = useState("")
   const topRef = useRef<HTMLDivElement>(null)
   const pendingDirRef = useRef<"next" | "prev">("next")
   const pendingScrollVerseRef = useRef<number | null>(initialVerse ?? null)
 
-  const versions = getAvailableVersions()
   const selectedBookData = books.find((b) => b.abbrev === selectedBook)
   const chaptersCount = selectedBookData?.chapters.length ?? 0
 
@@ -201,6 +207,10 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
     setFavorites(loadFavorites())
     setSavedProgress(loadProgress())
     if (!hasDoneTutorial()) setShowTutorial(true)
+    if (!initialVersion) {
+      const stored = getSelectedVersion()
+      if (stored) setVersion(stored)
+    }
     setInitialized(true)
   }, [])
 
@@ -606,54 +616,63 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
       )}
 
       {/* ── Sheet: Índice ─────────────────────────────────────────── */}
-      <Sheet open={showIndex} onOpenChange={setShowIndex}>
+      <Sheet open={showIndex} onOpenChange={(open) => { setShowIndex(open); if (!open) setBookSearch("") }}>
         <SheetContent side="left" className="w-80 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
           <SheetHeader>
-            <SheetTitle className="dark:text-slate-100">Índice Bíblico</SheetTitle>
+            <SheetTitle className="dark:text-slate-100 flex items-center gap-2">
+              Índice Bíblico
+              <Badge variant="secondary" className="text-xs font-normal">{version}</Badge>
+            </SheetTitle>
           </SheetHeader>
-          <div className="mt-4 mb-3">
-            <Select value={version} onValueChange={(v) => { setVersion(v); setShowIndex(false) }}>
-              <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white text-gray-900 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100">
-                {versions.map(v => (
-                  <SelectItem key={v.abbreviation} value={v.abbreviation} className="text-gray-900 dark:text-slate-100 dark:focus:bg-slate-700 dark:focus:text-white">
-                    {v.name} ({v.abbreviation})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="mt-4 mb-3 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-slate-500" />
+            <Input
+              value={bookSearch}
+              onChange={(e) => setBookSearch(e.target.value)}
+              placeholder="Buscar livro..."
+              className="pl-9 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+            />
           </div>
           <Separator className="dark:bg-slate-700" />
-          <ScrollArea className="h-[calc(100vh-160px)] mt-3">
-            {["Antigo Testamento", "Novo Testamento"].map((testament) => {
-              const testamentBooks = testament === "Antigo Testamento" ? books.slice(0, 39) : books.slice(39)
-              return (
-                <div key={testament} className="mb-4">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-2 px-1 text-stone-400 dark:text-slate-500">
-                    {testament}
-                  </p>
-                  {testamentBooks.map((b) => (
-                    <button key={b.abbrev}
-                      onClick={() => { setBookmarkedVerse(null); setSelectedBook(b.abbrev); setSelectedChapter(1); setShowIndex(false) }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between
-                        ${selectedBook === b.abbrev
-                          ? "bg-sky-50 text-sky-700 font-semibold dark:bg-blue-900/50 dark:text-blue-300"
-                          : "text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
-                      <span>{b.book}</span>
-                      <span className="text-xs text-stone-400 dark:text-slate-500">{b.chapters.length} cap.</span>
-                    </button>
-                  ))}
-                </div>
-              )
-            })}
+          <ScrollArea className="h-[calc(100vh-190px)] mt-3">
+            {(() => {
+              const query = normalizeSearch(bookSearch.trim())
+              const filterBooks = (list: BibleBook[]) =>
+                query === "" ? list : list.filter((b) => normalizeSearch(b.book).includes(query))
+              const oldT = filterBooks(books.slice(0, 39))
+              const newT = filterBooks(books.slice(39))
+              if (query !== "" && oldT.length === 0 && newT.length === 0) {
+                return <p className="text-center text-sm py-8 text-stone-400 dark:text-slate-500">Nenhum livro encontrado.</p>
+              }
+              return ["Antigo Testamento", "Novo Testamento"].map((testament) => {
+                const testamentBooks = testament === "Antigo Testamento" ? oldT : newT
+                if (testamentBooks.length === 0) return null
+                return (
+                  <div key={testament} className="mb-4">
+                    <p className="text-xs font-bold uppercase tracking-widest mb-2 px-1 text-stone-400 dark:text-slate-500">
+                      {testament}
+                    </p>
+                    {testamentBooks.map((b) => (
+                      <button key={b.abbrev}
+                        onClick={() => { setBookmarkedVerse(null); setSelectedBook(b.abbrev); setSelectedChapter(1); setShowIndex(false) }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between
+                          ${selectedBook === b.abbrev
+                            ? "bg-sky-50 text-sky-700 font-semibold dark:bg-blue-900/50 dark:text-blue-300"
+                            : "text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+                        <span>{b.book}</span>
+                        <span className="text-xs text-stone-400 dark:text-slate-500">{b.chapters.length} cap.</span>
+                      </button>
+                    ))}
+                  </div>
+                )
+              })
+            })()}
           </ScrollArea>
         </SheetContent>
       </Sheet>
 
       {/* ── Sheet: Configurações ─────────────────────────────────── */}
-      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+      <Sheet open={showSettings} onOpenChange={(open) => { setShowSettings(open); if (!open) setChapterSearch("") }}>
         <SheetContent className="w-72 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
           <SheetHeader>
             <SheetTitle className="dark:text-slate-100">Configurações</SheetTitle>
@@ -681,17 +700,30 @@ export function BibleReader({ initialBook, initialChapter, initialVerse, initial
               <p className="text-sm font-semibold mb-3 text-stone-600 dark:text-slate-300">
                 Ir para o capítulo
               </p>
+              {chaptersCount > 12 && (
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 dark:text-slate-500" />
+                  <Input
+                    value={chapterSearch}
+                    onChange={(e) => setChapterSearch(e.target.value)}
+                    placeholder="Buscar capítulo..."
+                    className="h-8 pl-8 text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-5 gap-1.5 max-h-48 overflow-y-auto">
-                {Array.from({ length: chaptersCount }, (_, i) => i + 1).map((n) => (
-                  <button key={n}
-                    onClick={() => { setBookmarkedVerse(null); turnPage(n > selectedChapter ? "next" : "prev"); setSelectedChapter(n); setShowSettings(false) }}
-                    className={`h-9 rounded text-sm font-medium transition-colors
-                      ${selectedChapter === n
-                        ? "bg-sky-500 text-white dark:bg-blue-700"
-                        : "bg-stone-50 text-stone-600 hover:bg-stone-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}>
-                    {n}
-                  </button>
-                ))}
+                {Array.from({ length: chaptersCount }, (_, i) => i + 1)
+                  .filter((n) => chapterSearch.trim() === "" || String(n).includes(chapterSearch.trim()))
+                  .map((n) => (
+                    <button key={n}
+                      onClick={() => { setBookmarkedVerse(null); turnPage(n > selectedChapter ? "next" : "prev"); setSelectedChapter(n); setShowSettings(false); setChapterSearch("") }}
+                      className={`h-9 rounded text-sm font-medium transition-colors
+                        ${selectedChapter === n
+                          ? "bg-sky-500 text-white dark:bg-blue-700"
+                          : "bg-stone-50 text-stone-600 hover:bg-stone-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}>
+                      {n}
+                    </button>
+                  ))}
               </div>
             </div>
             <Separator className="dark:bg-slate-700" />
